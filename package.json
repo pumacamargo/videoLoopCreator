@@ -1,0 +1,29 @@
+{
+  "name": "video-loop-creator",
+  "version": "1.0.0",
+  "description": "Concatenate multiple videos and audio files to create a video of specified duration",
+  "main": "src/electron/main.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "cli": "node src/cli/index.js",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "video",
+    "audio",
+    "concatenation",
+    "ffmpeg"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
+    "chalk": "^4.1.2",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "electron": "latest"
+  }
+}

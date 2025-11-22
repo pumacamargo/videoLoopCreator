@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Loop Creator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1>🎬 Video Loop Creator</h1>
+        <p>Concatenate videos and audio easily</p>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Videos Section -->
+      <section class="file-section">
+        <div class="section-header">
+          <h2>📹 Videos</h2>
+          <span class="file-count" id="video-count">0 files</span>
+        </div>
+
+        <div class="drop-zone" id="video-drop-zone">
+          <div class="drop-zone-content">
+            <p class="drop-icon">📁</p>
+            <p class="drop-text">Drag videos here</p>
+            <p class="drop-subtext">or</p>
+            <button class="btn-browse" id="btn-browse-videos">Select Videos</button>
+            <p class="drop-subtext" style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.7;">💡 You can also click to select</p>
+          </div>
+        </div>
+
+        <div class="file-list" id="video-list"></div>
+      </section>
+
+      <!-- Audio Section -->
+      <section class="file-section">
+        <div class="section-header">
+          <h2>🔊 Audio</h2>
+          <span class="file-count" id="audio-count">0 files</span>
+        </div>
+
+        <div class="drop-zone" id="audio-drop-zone">
+          <div class="drop-zone-content">
+            <p class="drop-icon">🎵</p>
+            <p class="drop-text">Drag audio here</p>
+            <p class="drop-subtext">or</p>
+            <button class="btn-browse" id="btn-browse-audios">Select Audio</button>
+          </div>
+        </div>
+
+        <div class="file-list" id="audio-list"></div>
+      </section>
+
+      <!-- Configuration -->
+      <section class="config-section">
+        <h2>⚙️ Settings</h2>
+
+        <div class="config-group">
+          <label>Video Duration:</label>
+          <div class="duration-input-group">
+            <div class="duration-field">
+              <input type="number" id="duration-hours" min="0" value="0" step="1">
+              <span class="duration-label">h</span>
+            </div>
+            <div class="duration-field">
+              <input type="number" id="duration-minutes" min="0" max="59" value="1" step="1">
+              <span class="duration-label">m</span>
+            </div>
+            <div class="duration-field">
+              <input type="number" id="duration-seconds" min="0" max="59" value="0" step="1">
+              <span class="duration-label">s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-group">
+          <label for="output-file">Output Filename:</label>
+          <div class="input-group">
+            <input type="text" id="output-file" value="video_final" placeholder="output_name">
+            <span class="file-extension">.mp4</span>
+          </div>
+        </div>
+
+        <div class="config-group">
+          <label for="output-dir">Save Location:</label>
+          <div class="input-group">
+            <input type="text" id="output-dir" readonly placeholder="Current folder">
+            <button class="btn-small" id="btn-select-dir">Change</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Create Button -->
+      <section class="action-section">
+        <button class="btn-create" id="btn-create">Create Video</button>
+      </section>
+
+      <!-- Progress -->
+      <section class="progress-section" id="progress-section" style="display: none;">
+        <div class="progress-header">
+          <h3>Creating video...</h3>
+          <p class="progress-message" id="progress-message"></p>
+        </div>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p class="progress-percent" id="progress-percent">0%</p>
+      </section>
+
+      <!-- Result -->
+      <section class="result-section" id="result-section" style="display: none;">
+        <div class="result-content" id="result-content"></div>
+        <button class="btn-again" id="btn-again">Create Another Video</button>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Video Loop Creator v1.0.0 | Powered by FFmpeg</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

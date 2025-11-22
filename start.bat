@@ -1,0 +1,6 @@
+@echo off
+echo Clearing Electron cache...
+rmdir /s /q %APPDATA%\videoLoopCreator 2>nul
+echo Starting Video Loop Creator...
+npm start
+pause
