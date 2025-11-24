@@ -38,7 +38,7 @@
       </section>
 
       <!-- Audio Section -->
-      <section class="file-section">
+      <section class="file-section" id="audio-section">
         <div class="section-header">
           <h2>🔊 Audio</h2>
           <span class="file-count" id="audio-count">0 files</span>
@@ -60,7 +60,15 @@
       <section class="config-section">
         <h2>⚙️ Settings</h2>
 
-        <div class="config-group">
+        <div class="config-group checkbox-group">
+          <label for="loop-videos">
+            <input type="checkbox" id="loop-videos">
+            <span>🔄 Create Perfect Loops for each video</span>
+          </label>
+          <p class="checkbox-desc">Creates seamless loop versions of videos by splitting and crossfading. Saved with "_loop" suffix.</p>
+        </div>
+
+        <div class="config-group" id="duration-group">
           <label>Video Duration:</label>
           <div class="duration-input-group">
             <div class="duration-field">

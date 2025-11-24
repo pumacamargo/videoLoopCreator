@@ -108,9 +108,46 @@ ipcMain.on('create-video', async (event, config) => {
       console.log('🎬 Usando ruta absoluta:', outputPath);
     }
 
-    // Ejecutar creación de video
+    // Si createLoopsFirst es true, crear loops primero
+    let videosToUse = config.videos;
+
+    if (config.createLoopsFirst) {
+      console.log('🔄 Creando perfect loops primero...');
+      const loopVideos = [];
+
+      for (let i = 0; i < config.videos.length; i++) {
+        const videoPath = config.videos[i];
+        console.log(`🔄 Creando loop para video ${i + 1}/${config.videos.length}: ${videoPath}`);
+
+        event.reply('progress', {
+          step: 'loops',
+          message: `Creating perfect loop ${i + 1}/${config.videos.length}...`,
+          percent: Math.round(5 + (i / config.videos.length) * 5)
+        });
+
+        try {
+          const loopPath = await videoCreator.createPerfectLoop(videoPath, null, 1.0);
+          loopVideos.push(loopPath);
+          console.log(`✅ Loop creado: ${loopPath}`);
+        } catch (error) {
+          console.error(`❌ Error creando loop para ${videoPath}:`, error);
+          throw error;
+        }
+      }
+
+      // Usar los loops creados para la concatenación
+      videosToUse = loopVideos;
+
+      event.reply('progress', {
+        step: 'video',
+        message: 'Creating final video with loop videos...',
+        percent: 12
+      });
+    }
+
+    // Ejecutar creación de video (con videos normales o loops)
     await videoCreator.createVideo(
-      config.videos,
+      videosToUse,
       config.audios,
       config.duration,
       outputPath,
@@ -184,6 +221,63 @@ ipcMain.on('copy-file-to-temp', async (event, fileData) => {
     event.reply('file-copied', {
       success: false,
       error: error.message
+    });
+  }
+});
+
+ipcMain.on('create-perfect-loops', async (event, videoFiles) => {
+  try {
+    console.log(`🔄 Creando perfect loops para ${videoFiles.length} videos...`);
+
+    const results = [];
+    const totalVideos = videoFiles.length;
+
+    for (let i = 0; i < videoFiles.length; i++) {
+      const inputFile = videoFiles[i];
+      const fileName = path.basename(inputFile);
+      const fileExt = path.extname(fileName);
+      const fileNameWithoutExt = path.basename(fileName, fileExt);
+      const outputFile = path.join(path.dirname(inputFile), `${fileNameWithoutExt}_loop.mp4`);
+
+      try {
+        const progressMessage = `Processing video ${i + 1}/${totalVideos}: ${fileName}`;
+        event.reply('progress', {
+          step: 'loop-processing',
+          message: progressMessage,
+          percent: Math.round((i / totalVideos) * 100)
+        });
+
+        console.log(`🔄 Procesando: ${inputFile}`);
+        await videoCreator.createPerfectLoop(inputFile, outputFile, 0.5);
+
+        results.push({
+          success: true,
+          inputFile,
+          outputFile,
+          message: `✅ ${fileName}`
+        });
+
+        console.log(`✅ Completado: ${outputFile}`);
+      } catch (error) {
+        console.error(`❌ Error procesando ${inputFile}:`, error);
+        results.push({
+          success: false,
+          inputFile,
+          error: error.message,
+          message: `❌ ${fileName}: ${error.message}`
+        });
+      }
+    }
+
+    event.reply('loops-created', {
+      success: true,
+      results: results
+    });
+  } catch (error) {
+    console.error('❌ Error creating perfect loops:', error);
+    event.reply('error', {
+      step: 'loop-creation',
+      message: error.message
     });
   }
 });

@@ -22,6 +22,14 @@ function setupEventListeners() {
   document.getElementById('btn-browse-videos').addEventListener('click', () => selectFiles('videos'));
   document.getElementById('btn-browse-audios').addEventListener('click', () => selectFiles('audios'));
 
+  // Checkbox de perfect loops
+  document.getElementById('loop-videos').addEventListener('change', (e) => {
+    const isLoopMode = e.target.checked;
+    // Mantener duration siempre visible, pero ocultar audio solo en modo loop puro
+    document.getElementById('audio-section').style.display = isLoopMode ? 'none' : 'block';
+    updateCreateButton();
+  });
+
   // Seleccionar directorio de salida
   document.getElementById('btn-select-dir').addEventListener('click', async () => {
     console.log('🗂️ Botón cambiar directorio clickeado');
@@ -49,6 +57,7 @@ function setupEventListeners() {
   // Listeners para progreso y errores
   window.api.onProgress((data) => updateProgress(data));
   window.api.onVideoCreated((data) => showResult(data));
+  window.api.onLoopsCreated((data) => showLoopsResult(data));
   window.api.onError((data) => showError(data));
 }
 
@@ -318,23 +327,20 @@ function updateCount(elementId, count) {
 
 // Crear video
 async function createVideo() {
-  // Validar
+  // Obtener modo (perfect loop o normal)
+  const isLoopMode = document.getElementById('loop-videos').checked;
+
+  // Validar videos
   if (videos.length === 0) {
     showErrorMessage('You must select at least one video');
     return;
   }
 
-  if (audios.length === 0) {
-    showErrorMessage('You must select at least one audio');
-    return;
-  }
-
-  // Obtener valores de tiempo
+  // Obtener duración (requerida en ambos modos)
   const hours = parseInt(document.getElementById('duration-hours').value) || 0;
   const minutes = parseInt(document.getElementById('duration-minutes').value) || 0;
   const seconds = parseInt(document.getElementById('duration-seconds').value) || 0;
 
-  // Calcular duración total en segundos
   let durationSeconds = hours * 3600 + minutes * 60 + seconds;
 
   if (durationSeconds <= 0) {
@@ -342,7 +348,13 @@ async function createVideo() {
     return;
   }
 
-  const outputFile = document.getElementById('output-file').value || 'video_final';
+  // Si no es modo loop, validar audio
+  if (!isLoopMode) {
+    if (audios.length === 0) {
+      showErrorMessage('You must select at least one audio');
+      return;
+    }
+  }
 
   // Deshabilitar botón
   const btnCreate = document.getElementById('btn-create');
@@ -351,6 +363,7 @@ async function createVideo() {
   // Mostrar progreso
   document.getElementById('progress-section').style.display = 'block';
   document.getElementById('result-section').style.display = 'none';
+  document.getElementById('progress-message').textContent = isLoopMode ? 'Creating perfect loops...' : 'Creating video...';
 
   // Procesar archivos (rutas directas del diálogo o arrastrados)
   const convertToPath = async (fileArray) => {
@@ -358,11 +371,9 @@ async function createVideo() {
 
     for (const item of fileArray) {
       if (typeof item === 'string') {
-        // Ruta directa del diálogo de Electron
         console.log('📁 Ruta de archivo:', item);
         paths.push(item);
       } else if (typeof item === 'object' && item.type === 'File' && item.file) {
-        // Archivo arrastrado (File object del navegador)
         try {
           console.log('📋 Copiando archivo arrastrado:', item.name);
           const tempPath = await window.api.copyFileToTemp(item);
@@ -370,7 +381,6 @@ async function createVideo() {
           paths.push(tempPath);
         } catch (error) {
           console.error('❌ Error copiando archivo:', error);
-          console.error('Stack:', error.stack);
           throw new Error(`Could not copy ${item.name}: ${error.message}`);
         }
       } else {
@@ -381,25 +391,61 @@ async function createVideo() {
     return paths;
   };
 
-  // Crear video
+  // Crear video o perfect loops
   try {
     const videoPaths = await convertToPath(videos);
-    const audioPaths = await convertToPath(audios);
 
-    const config = {
-      videos: videoPaths,
-      audios: audioPaths,
-      duration: durationSeconds,
-      outputFile: outputDirectory ? `${outputDirectory}/${outputFile}` : outputFile
-    };
+    if (isLoopMode) {
+      // Modo perfect loops: crear loops Y luego concatenar con audio y duración
+      console.log('🔄 Creando perfect loops y video...');
 
-    console.log('🎬 Enviando config:', config);
-    window.api.createVideo(config);
+      // Validar que haya audio cuando se quieren loops + video
+      if (audios.length === 0) {
+        showErrorMessage('You must select at least one audio file to create the final video');
+        btnCreate.disabled = false;
+        return;
+      }
+
+      const audioPaths = await convertToPath(audios);
+      const outputFile = document.getElementById('output-file').value || 'video_final';
+
+      const config = {
+        videos: videoPaths,
+        audios: audioPaths,
+        duration: durationSeconds,
+        outputFile: outputDirectory ? `${outputDirectory}/${outputFile}` : outputFile,
+        createLoopsFirst: true  // Flag para indicar que cree loops primero
+      };
+
+      console.log('🎬 Enviando config con loops:', config);
+      window.api.createVideo(config);
+    } else {
+      // Modo video normal
+      const audioPaths = await convertToPath(audios);
+      const outputFile = document.getElementById('output-file').value || 'video_final';
+
+      const config = {
+        videos: videoPaths,
+        audios: audioPaths,
+        duration: durationSeconds,
+        outputFile: outputDirectory ? `${outputDirectory}/${outputFile}` : outputFile
+      };
+
+      console.log('🎬 Enviando config:', config);
+      window.api.createVideo(config);
+    }
   } catch (error) {
-    console.error('❌ Error en conversión:', error);
-    showErrorMessage('Error processing files: ' + error.message);
+    console.error('❌ Error:', error);
+    showErrorMessage('Error: ' + error.message);
     btnCreate.disabled = false;
   }
+}
+
+// Actualizar botón create según modo
+function updateCreateButton() {
+  const isLoopMode = document.getElementById('loop-videos').checked;
+  const btnCreate = document.getElementById('btn-create');
+  btnCreate.textContent = isLoopMode ? 'Create Perfect Loops' : 'Create Video';
 }
 
 // Actualizar progreso
@@ -432,6 +478,40 @@ function showResult(data) {
     <p class="result-message">Your video is ready to download</p>
     <div class="result-file">${data.file}</div>
   `;
+}
+
+// Mostrar resultado de perfect loops
+function showLoopsResult(data) {
+  // Habilitar botón
+  document.getElementById('btn-create').disabled = false;
+
+  // Mostrar resultado
+  document.getElementById('progress-section').style.display = 'none';
+  document.getElementById('result-section').style.display = 'block';
+
+  const resultContent = document.getElementById('result-content');
+
+  if (data.results && data.results.length > 0) {
+    const successCount = data.results.filter(r => r.success).length;
+    const filesList = data.results
+      .map(r => `<div class="result-file">${r.message}</div>`)
+      .join('');
+
+    resultContent.innerHTML = `
+      <div class="result-success">✅</div>
+      <h2 class="result-title">Perfect Loops Created!</h2>
+      <p class="result-message">${successCount}/${data.results.length} videos processed successfully</p>
+      <div class="result-files-list">
+        ${filesList}
+      </div>
+    `;
+  } else {
+    resultContent.innerHTML = `
+      <div class="result-success">✅</div>
+      <h2 class="result-title">Perfect Loops Created!</h2>
+      <p class="result-message">All videos have been processed</p>
+    `;
+  }
 }
 
 // Mostrar error

@@ -123,12 +123,20 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.send('create-video', config);
   },
 
+  createPerfectLoops: (videoFiles) => {
+    ipcRenderer.send('create-perfect-loops', videoFiles);
+  },
+
   onProgress: (callback) => {
     ipcRenderer.on('progress', (event, data) => callback(data));
   },
 
   onVideoCreated: (callback) => {
     ipcRenderer.on('video-created', (event, data) => callback(data));
+  },
+
+  onLoopsCreated: (callback) => {
+    ipcRenderer.on('loops-created', (event, data) => callback(data));
   },
 
   onError: (callback) => {
