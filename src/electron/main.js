@@ -55,16 +55,17 @@ ipcMain.on('select-files', async (event, type) => {
 
     const filter = type === 'videos'
       ? [
-          { name: 'Videos', extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv'] }
+          { name: 'Videos', extensions: ['mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv'] },
+          { name: 'Todos', extensions: ['*'] }
         ]
       : [
-          { name: 'Audios', extensions: ['mp3', 'wav', 'aac', 'm4a', 'flac', 'ogg'] }
+          { name: 'Audios', extensions: ['mp3', 'wav', 'aac', 'm4a', 'flac', 'ogg'] },
+          { name: 'Todos', extensions: ['*'] }
         ];
 
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile', 'multiSelections'],
-      filters: filter,
-      defaultPath: require('os').homedir()
+      filters: filter
     });
 
     console.log(`📂 Dialog result:`, result);
